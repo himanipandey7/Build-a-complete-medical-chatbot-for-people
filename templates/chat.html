@@ -1,81 +1,309 @@
-<link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
-<script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-
 <!DOCTYPE html>
-<html>
-	<head>
-		<title>Chatbot</title>
-		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
-		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css')}}"/>
-	</head>
-	
-	
-	<body>
-		<div class="container-fluid h-100">
-			<div class="row justify-content-center h-100">		
-				<div class="col-md-8 col-xl-6 chat">
-					<div class="card">
-						<div class="card-header msg_head">
-							<div class="d-flex bd-highlight">
-								<div class="img_cont">
-									<img src="https://cdn-icons-png.flaticon.com/512/387/387569.png" class="rounded-circle user_img">
-									<!-- <img src="https://www.prdistribution.com/spirit/uploads/pressreleases/2019/newsreleases/d83341deb75c4c4f6b113f27b1e42cd8-chatbot-florence-already-helps-thousands-of-patients-to-remember-their-medication.png" class="rounded-circle user_img"> -->
-									<span class="online_icon"></span>
-								</div>
-								<div class="user_info">
-									<span>Medical Chatbot</span>
-									<p>Ask me anything!</p>
-								</div>
-							</div>
-						</div>
-						<div id="messageFormeight" class="card-body msg_card_body">
-							
-							
-						</div>
-						<div class="card-footer">
-							<form id="messageArea" class="input-group">
-                                <input type="text" id="text" name="msg" placeholder="Type your message..." autocomplete="off" class="form-control type_msg" required/>
-								<div class="input-group-append">
-									<button type="submit" id="send" class="input-group-text send_btn"><i class="fas fa-location-arrow"></i></button>
-								</div>
-							</form>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		
-		<script>
-			$(document).ready(function() {
-				$("#messageArea").on("submit", function(event) {
-					const date = new Date();
-					const hour = date.getHours();
-					const minute = date.getMinutes();
-					const str_time = hour+":"+minute;
-					var rawText = $("#text").val();
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEDBOT</title>
+    <!-- Bootstrap 5 & FontAwesome Icons -->
+    <link href="https://cdn.jsdelivr.net/style.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --secondary-color: #0dcaf0;
+            --bg-gradient: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            --chat-bg: rgba(255, 255, 255, 0.9);
+            --user-msg-bg: #0d6efd;
+            --bot-msg-bg: #f1f3f5;
+        }
 
-					var userHtml = '<div class="d-flex justify-content-end mb-4"><div class="msg_cotainer_send">' + rawText + '<span class="msg_time_send">'+ str_time + '</span></div><div class="img_cont_msg"><img src="https://i.ibb.co/d5b84Xw/Untitled-design.png" class="rounded-circle user_img_msg"></div></div>';
-					
-					$("#text").val("");
-					$("#messageFormeight").append(userHtml);
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 15px;
+        }
 
-					$.ajax({
-						data: {
-							msg: rawText,	
-						},
-						type: "POST",
-						url: "/get",
-					}).done(function(data) {
-						var botHtml = '<div class="d-flex justify-content-start mb-4"><div class="img_cont_msg"><img src="https://cdn-icons-png.flaticon.com/512/387/387569.png" class="rounded-circle user_img_msg"></div><div class="msg_cotainer">' + data + '<span class="msg_time">' + str_time + '</span></div></div>';
-						$("#messageFormeight").append($.parseHTML(botHtml));
-					});
-					event.preventDefault();
-				});
-			});
-		</script>
-        
-    </body>
+        .chat-card {
+            width: 100%;
+            max-width: 850px;
+            height: 85vh;
+            background: var(--chat-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .chat-header {
+            background: linear-gradient(45deg, #0d6efd, #0dcaf0);
+            color: white;
+            padding: 18px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-header h4 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chat-body {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background-color: #f8f9fa;
+        }
+
+        .message-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            max-width: 80%;
+        }
+
+        .user-row {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .bot-row {
+            align-self: flex-start;
+        }
+
+        .avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .bot-avatar { background: #0dcaf0; }
+        .user-avatar { background: #0d6efd; }
+
+        .message-bubble {
+            padding: 12px 18px;
+            border-radius: 18px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            word-wrap: break-word;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .user-bubble {
+            background: var(--user-msg-bg);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .bot-bubble {
+            background: var(--bot-msg-bg);
+            color: #212529;
+            border-bottom-left-radius: 4px;
+            border: 1px solid #e9ecef;
+        }
+
+        .chat-footer {
+            padding: 15px 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .input-group {
+            background: #f1f3f5;
+            border-radius: 30px;
+            padding: 5px 8px;
+        }
+
+        .form-control {
+            border: none;
+            background: transparent;
+            box-shadow: none !important;
+            padding-left: 18px;
+        }
+
+        .send-btn {
+            border-radius: 50% !important;
+            width: 42px;
+            height: 42px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            transition: transform 0.2s;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            background: #0b5ed7;
+        }
+
+        /* Typing Indicator Animation */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 6px 10px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: #adb5bd;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="chat-card">
+    <!-- Header -->
+    <div class="chat-header">
+        <h4><i class="fa-solid fa-user-doctor"></i> MEDBOT</h4>
+        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2">
+            <i class="fa-solid fa-circle text-success fs-6 me-1"></i> Online (RAG)
+        </span>
+    </div>
+
+    <!-- Chat Messages Container -->
+    <div class="chat-body" id="chatBody">
+        <!-- Initial Bot Greeting -->
+        <div class="message-row bot-row">
+            <div class="avatar bot-avatar"><i class="fa-solid fa-robot"></i></div>
+            <div class="message-bubble bot-bubble">
+                Hello! I am your AI Medical Assistant. Ask me any health or medical questions based on your reference library.
+            </div>
+        </div>
+    </div>
+
+    <!-- Input Form -->
+    <div class="chat-footer">
+        <form id="chatForm">
+            <div class="input-group">
+                <input type="text" id="userInput" class="form-control" placeholder="Ask a medical question..." autocomplete="off" required>
+                <button type="submit" class="send-btn" id="sendBtn">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- jQuery and Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        const $chatBody = $('#chatBody');
+        const $chatForm = $('#chatForm');
+        const $userInput = $('#userInput');
+
+        function scrollToBottom() {
+            $chatBody.scrollTop($chatBody[0].scrollHeight);
+        }
+
+        $chatForm.on('submit', function (e) {
+            e.preventDefault();
+            const userText = $userInput.val().trim();
+            if (!userText) return;
+
+            // 1. Render User Message
+            const userHTML = `
+                <div class="message-row user-row">
+                    <div class="avatar user-avatar"><i class="fa-solid fa-user"></i></div>
+                    <div class="message-bubble user-bubble">${escapeHtml(userText)}</div>
+                </div>
+            `;
+            $chatBody.append(userHTML);
+            $userInput.val('');
+            scrollToBottom();
+
+            // 2. Render Typing Indicator
+            const typingID = 'typing-' + Date.now();
+            const typingHTML = `
+                <div class="message-row bot-row" id="${typingID}">
+                    <div class="avatar bot-avatar"><i class="fa-solid fa-robot"></i></div>
+                    <div class="message-bubble bot-bubble">
+                        <div class="typing-indicator">
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            $chatBody.append(typingHTML);
+            scrollToBottom();
+
+            // 3. Send AJAX POST request to Flask '/get' endpoint
+            $.ajax({
+                url: '/get',
+                type: 'POST',
+                data: { msg: userText },
+                success: function (data) {
+                    $('#' + typingID).remove();
+                    const botHTML = `
+                        <div class="message-row bot-row">
+                            <div class="avatar bot-avatar"><i class="fa-solid fa-robot"></i></div>
+                            <div class="message-bubble bot-bubble">${data}</div>
+                        </div>
+                    `;
+                    $chatBody.append(botHTML);
+                    scrollToBottom();
+                },
+                error: function () {
+                    $('#' + typingID).remove();
+                    const errorHTML = `
+                        <div class="message-row bot-row">
+                            <div class="avatar bot-avatar"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                            <div class="message-bubble bot-bubble text-danger">
+                                Sorry, unable to process your query right now. Please try again.
+                            </div>
+                        </div>
+                    `;
+                    $chatBody.append(errorHTML);
+                    scrollToBottom();
+                }
+            });
+        });
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+    });
+</script>
+
+</body>
 </html>
