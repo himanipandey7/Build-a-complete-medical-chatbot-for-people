@@ -1,34 +1,22 @@
-from __future__ import annotations
-from langchain.chains import create_history_aware_retriever, create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+import os
+from langchain_community.document_loaders import PyPDFDirectoryLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.embeddings import HuggingFaceEmbeddings
 
-# 1. Contextualize Question Prompt (Converts "its treatment" -> "acne treatment")
-contextualize_q_system_prompt = (
-    "Given a chat history and the latest user question "
-    "which might reference context in the chat history, "
-    "formulate a standalone question which can be understood "
-    "without the chat history. Do NOT answer the question, "
-    "just reformulate it if needed and otherwise return it as is."
-)
+def load_pdf_file(data):
+    loader = PyPDFDirectoryLoader(data)
+    documents = loader.load()
+    return documents
 
-contextualize_q_prompt = ChatPromptTemplate.from_messages([
-    ("system", contextualize_q_system_prompt),
-    MessagesPlaceholder("chat_history"),
-    ("human", "{input}"),
-])
+def filter_to_minimal_docs(docs):
+    return [doc for doc in docs if doc.page_content and doc.page_content.strip()]
 
-# 2. Create History-Aware Retriever
-history_aware_retriever = create_history_aware_retriever(
-    llm, retriever, contextualize_q_prompt
-)
+def text_split(extracted_data):
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=20)
+    text_chunks = text_splitter.split_documents(extracted_data)
+    clean_chunks = [chunk for chunk in text_chunks if chunk.page_content and chunk.page_content.strip()]
+    return clean_chunks
 
-# 3. Answer Prompt
-qa_prompt = ChatPromptTemplate.from_messages([
-    ("system", "You are a helpful medical assistant. Use the following context to answer: {context}"),
-    MessagesPlaceholder("chat_history"),
-    ("human", "{input}"),
-])
-
-question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
-rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
+def download_hugging_face_embeddings():
+    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    return embeddings

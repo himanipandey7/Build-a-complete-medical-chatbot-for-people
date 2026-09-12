@@ -1,11 +1,11 @@
- import os
+import os
 import sys
 
-# Ensure Python can find modules inside 'src'
-sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+# Ensure Python can locate modules from the root directory
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.helper import load_pdf_file, filter_to_minimal_docs, text_split, download_hugging_face_embeddings
-from langchain_chroma import Chroma
+from langchain_community.vectorstores import Chroma
 
 # 1. Load PDFs from data directory
 print("Loading PDF files...")
