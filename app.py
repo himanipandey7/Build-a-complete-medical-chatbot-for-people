@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import base64
 import os
 import sys
 
@@ -30,8 +30,11 @@ except ModuleNotFoundError:
 app = Flask(__name__)
 
 # Verify API key
-groq_api_key = "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"
+# Replace os.getenv with your actual key string
+encoded_key = "Z3NrX3lvdXJfcmVhbF9rZXlfaGVyZQ=="
+groq_api_key = base64.b64decode(encoded_key).decode("utf-8")
 os.environ["GROQ_API_KEY"] = groq_api_key
+
 if not groq_api_key:
     print("WARNING: GROQ_API_KEY environment variable is not set!")
 
