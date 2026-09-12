@@ -9,7 +9,7 @@ import os
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
 
-
+from __future__ import annotations
 from flask import Flask, render_template, request
 
 from langchain_community.vectorstores import Chroma
