@@ -27,44 +27,53 @@ if groq_api_key:
 else:
     print("WARNING: GROQ_API_KEY is missing! RAG pipeline will fail.")
 
-# 3. Initialize Embeddings & Vectorstore
-embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+# Global variables for lazy loading
+_vectorstore = None
+_rag_chain = None
 
-chroma_dir = os.path.abspath("./chroma_db")
-vectorstore = Chroma(
-    persist_directory=chroma_dir,
-    embedding_function=embeddings
-)
+def get_rag_chain():
+    """Lazy-load embeddings, vectorstore, and RAG chain on first request to save RAM."""
+    global _vectorstore, _rag_chain
+    if _rag_chain is None:
+        print("Initializing embeddings and vectorstore (lazy load)...")
+        embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        
+        chroma_dir = os.path.abspath("./chroma_db")
+        _vectorstore = Chroma(
+            persist_directory=chroma_dir,
+            embedding_function=embeddings
+        )
+        
+        retriever = _vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 3})
+        
+        llm = ChatGroq(
+            model="llama-3.3-70b-versatile",
+            temperature=0.4,
+            max_tokens=500
+        )
+        
+        system_prompt = (
+            "You are an assistant for question-answering tasks. "
+            "Use the following pieces of retrieved context to answer "
+            "the question. If you don't know the answer, say that you "
+            "don't know. Use three sentences maximum and keep the "
+            "answer concise.\n\n"
+            "{context}"
+        )
+        
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", system_prompt),
+                ("human", "{input}"),
+            ]
+        )
+        
+        question_answer_chain = create_stuff_documents_chain(llm, prompt)
+        _rag_chain = create_retrieval_chain(retriever, question_answer_chain)
+        
+    return _rag_chain
 
-retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 3})
-
-# 4. LLM & Retrieval Chain Setup
-llm = ChatGroq(
-    model="llama-3.3-70b-versatile",
-    temperature=0.4,
-    max_tokens=500
-)
-
-system_prompt = (
-    "You are an assistant for question-answering tasks. "
-    "Use the following pieces of retrieved context to answer "
-    "the question. If you don't know the answer, say that you "
-    "don't know. Use three sentences maximum and keep the "
-    "answer concise.\n\n"
-    "{context}"
-)
-
-prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", system_prompt),
-        ("human", "{input}"),
-    ]
-)
-
-question_answer_chain = create_stuff_documents_chain(llm, prompt)
-rag_chain = create_retrieval_chain(retriever, question_answer_chain)
-
-# 5. Flask Routes
+# 3. Flask Routes
 @app.route("/")
 def index():
     return render_template("chat.html")
@@ -76,7 +85,8 @@ def chat():
         return jsonify({"response": "Please enter a valid message."}), 400
     
     try:
-        response = rag_chain.invoke({"input": msg})
+        chain = get_rag_chain()
+        response = chain.invoke({"input": msg})
         return jsonify({"response": response["answer"]})
     except Exception as e:
         print(f"Error during chain execution: {e}")
