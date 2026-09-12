@@ -16,7 +16,7 @@ from langchain_community.vectorstores import Chroma
 
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
-from langchain_ollama import ChatOllama
+from langchain_groq import ChatGroq
 
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 
@@ -76,9 +76,13 @@ retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k
 
 
 
-# 3. Local Ollama Model
+# 3. GROQ MODEL
 
-chat_model = ChatOllama(model="qwen2.5:3b")
+chat_model = ChatGroq(
+    groq_api_key=os.getenv("GROQ_API_KEY"),
+    model_name="llama-3.1-8b-instant"
+)
+
 
 
 
@@ -223,9 +227,6 @@ def chat():
 
 
 
-
 if __name__ == '__main__':
-
-    # Localhost server on port 5000
-
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
